@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        [
+          {
+            id: 1,
+            question: "ইউরেনিয়ামের অর্ধায়ু কত বছর?",
+            options: {
+              a: "৪৫ বছর",
+              b: "৪৫ কোটি বছর",
+              c: "৪৫০ কোটি বছর",
+              d: "৪৫০ বছর",
+            },
+            correct: "c",
+            explanation:
+              "<p>ইউরেনিয়াম-২৩৮ (<sup>238</sup>U) এর অর্ধায়ু প্রায় 4.5 x 10<sup>9</sup> বছর বা 450 কোটি বছর। এই দীর্ঘ অর্ধায়ু এটিকে পৃথিবীর বয়স নির্ধারণ এবং ভূতাত্ত্বিক সময় পরিমাপের জন্য একটি গুরুত্বপূর্ণ উপাদান হিসেবে ব্যবহার করতে সাহায্য করে।</p>",
+          },
+          {
+            id: 2,
+            question:
+              "কোনো তেজস্ক্রিয় মৌলের অর্ধায়ু ও গড় আয়ুর মধ্যে সম্পর্ক হলো-",
+            options: {
+              a: "এরা সমানুপাতিক",
+              b: "এরা ব্যস্তানুপাতিক",
+              c: "এরা বর্গের সমানুপাতিক",
+              d: "সমান",
+            },
+            correct: "a",
+            explanation:
+              "<p>কোনো তেজস্ক্রিয় মৌলের অর্ধায়ু (T<sub>½</sub>) এবং গড় আয়ু (τ) একে অপরের সমানুপাতিক। এদের মধ্যে সম্পর্ক হলো T<sub>½</sub> = 0.693τ। অর্থাৎ, একটি মৌলের অর্ধায়ু যত বেশি হবে, তার গড় আয়ুও তত বেশি হবে।</p>",
+          },
+          {
+            id: 3,
+            question: "তেজস্ক্রিয় ক্ষয় সূত্র হলো-",
+            options: {
+              a: "N = N₀e⁻λt",
+              b: "N = N₀eλt",
+              c: "N₀ = Ne⁻λt",
+              d: "a ও b উভয়ই",
+            },
+            correct: "a",
+            explanation:
+              "<p>তেজস্ক্রিয় ক্ষয় সূত্রটি হলো N = N₀e<sup>-λt</sup>। এখানে N হলো t সময় পর অবশিষ্ট তেজস্ক্রিয় পরমাণুর সংখ্যা, N₀ হলো প্রাথমিক তেজস্ক্রিয় পরমাণুর সংখ্যা, λ হলো ক্ষয় ধ্রুবক, এবং e হলো প্রাকৃতিক লগারিদমের ভিত্তি।</p>",
+          },
+          {
+            id: 4,
+            question:
+              "A, B ও C তিনটি তেজস্ক্রিয় মৌলের অর্ধায়ু যথাক্রমে Ta, Tb ও Tc এবং তাদের ক্ষয় ধ্রুবক যথাক্রমে λa, λb ও λc [এখানে λa > λb > λc] নিচের কোন সম্পর্কটি সঠিক?",
+            options: {
+              a: "Tb > Ta > Tc",
+              b: "Tc > Ta > Tb",
+              c: "Tc > Tb > Ta",
+              d: "Ta > Tb > Tc",
+            },
+            correct: "c",
+            explanation:
+              "<p>তেজস্ক্রিয় ক্ষয় ধ্রুবক (λ) এবং অর্ধায়ু (T<sub>½</sub>) এর মধ্যে সম্পর্ক হলো T<sub>½</sub> = ln(2)/λ। এই সম্পর্ক থেকে বোঝা যায় যে ক্ষয় ধ্রুবক যত বেশি হবে, অর্ধায়ু তত কম হবে।<br>যেহেতু λa > λb > λc, তাই অর্ধায়ুর সম্পর্কটি হবে বিপরীত: T<sub>c</sub> > T<sub>b</sub> > T<sub>a</sub>।</p>",
+          },
+          {
+            id: 5,
+            question: "তেজস্ক্রিয় মৌলের অর্ধায়ু নির্ভর করে কোনটির উপর?",
+            options: {
+              a: "মৌলের প্রকৃতি",
+              b: "মৌলের পরিমাণ",
+              c: "তাপমাত্রা",
+              d: "চাপ",
+            },
+            correct: "a",
+            explanation:
+              "<p>তেজস্ক্রিয় মৌলের অর্ধায়ু শুধুমাত্র <b>মৌলের নিউক্লিয়াসের প্রকৃতির</b> উপর নির্ভর করে। এটি তাপমাত্রা, চাপ, ভৌত অবস্থা বা রাসায়নিক বন্ধনের মতো বাহ্যিক কোনো কারণ দ্বারা প্রভাবিত হয় না।</p>",
+          },
+          {
+            id: 6,
+            question:
+              "কোনো তেজস্ক্রিয় মৌলের অর্ধায়ু ও গড় আয়ুর মধ্যে সম্পর্কযুক্ত সমীকরণ নিচের কোনটি?",
+            options: {
+              a: "T½ = 0.693/τ",
+              b: "T½ = τ/0.693",
+              c: "T½ = 0.693τ",
+              d: "T½ = τ",
+            },
+            correct: "c",
+            explanation:
+              "<p>তেজস্ক্রিয় মৌলের অর্ধায়ু (T<sub>½</sub>) এবং গড় আয়ু (τ) এর মধ্যে সম্পর্ক হলো T<sub>½</sub> = 0.693τ। এখানে 0.693 হলো ln(2) এর আনুমানিক মান।</p>",
+          },
+          {
+            id: 7,
+            question:
+              "তেজস্ক্রিয় পদার্থগুলি ওদের ক্ষয়ের সময় নিচের কোনটি নিঃসরণ করতে পারে না?",
+            options: {
+              a: "হিলিয়াম নিউক্লিয়াস",
+              b: "ইলেকট্রন",
+              c: "প্রোটন",
+              d: "নিউট্রন",
+            },
+            correct: "c",
+            explanation:
+              "<p>তেজস্ক্রিয় ক্ষয় প্রক্রিয়ায় সাধারণত আলফা (হিলিয়াম নিউক্লিয়াস), বিটা (ইলেকট্রন বা পজিট্রন) এবং গামা রশ্মি নির্গত হয়। নিউক্লিয়াস থেকে সরাসরি <b>প্রোটন</b> নির্গমন একটি অত্যন্ত বিরল ক্ষয় প্রক্রিয়া যা তেজস্ক্রিয়তার সাধারণ রূপ নয়।</p>",
+          },
+          {
+            id: 8,
+            question: "তেজস্ক্রিয় ক্ষয় সূত্র হলো-",
+            options: {
+              a: "N = N₀e^(-λt)",
+              b: "N = N₀e^(-λt)",
+              c: "N₀ = Ne^(-λt)",
+              d: "কোনোটিই নয়",
+            },
+            correct: "a",
+            explanation:
+              "<p>তেজস্ক্রিয় ক্ষয় সূত্রটি হলো N = N₀e<sup>-λt</sup>। এই সূত্রটি সময়ের সাথে তেজস্ক্রিয় পরমাণুর সংখ্যা কীভাবে কমে যায় তা বর্ণনা করে। এখানে N হলো t সময় পর অবশিষ্ট পরমাণুর সংখ্যা, N₀ হলো প্রাথমিক পরমাণুর সংখ্যা, এবং λ হলো ক্ষয় ধ্রুবক।</p>",
+          },
+          {
+            id: 9,
+            question: "তেজস্ক্রিয় কণার নিউক্লিয়াস থেকে নিঃসরণ করতে পারে না?",
+            options: {
+              a: "হিলিয়াম নিউক্লিয়াস",
+              b: "ইলেকট্রন",
+              c: "প্রোটন",
+              d: "নিউট্রন",
+            },
+            correct: "c",
+            explanation:
+              "<p>তেজস্ক্রিয় ক্ষয় প্রক্রিয়ায় নিউক্লিয়াস থেকে প্রধানত আলফা কণা (হিলিয়াম নিউক্লিয়াস), বিটা কণা (ইলেকট্রন) এবং গামা রশ্মি নির্গত হয়। সরাসরি <b>প্রোটন</b> নিঃসরণ তেজস্ক্রিয় ক্ষয়ের একটি সাধারণ ধরন নয়।</p>",
+          },
+          {
+            id: 10,
+            question:
+              "তেজস্ক্রিয় কণার নিউক্লিয়াস থেকে যে কণা নির্গত হলে আধানের পরিমাণ 2 একক এবং ভর 4 একক কমে যায় তা হলো-",
+            options: {
+              a: "ফোটন",
+              b: "বিটা",
+              c: "ইলেকট্রন",
+              d: "আলফা",
+            },
+            correct: "d",
+            explanation:
+              "<p>যখন একটি নিউক্লিয়াস থেকে একটি <b>আলফা কণা</b> (α-কণা) নির্গত হয়, তখন নিউক্লিয়াসের ভর সংখ্যা 4 একক এবং পারমাণবিক সংখ্যা (আধান) 2 একক কমে যায়। আলফা কণা মূলত একটি হিলিয়াম নিউক্লিয়াস (<sup>4</sup>He<sub>2</sub>)।</p>",
+          },
+          {
+            id: 11,
+            question:
+              "যখন একটি পরমাণুর নিউক্লিয়াস থেকে একটি বিটা কণা নির্গত হয় তখন-",
+            options: {
+              a: "পারমাণবিক সংখ্যা এক কমে যায়",
+              b: "ভর সংখ্যা এক কমে যায়",
+              c: "পারমাণবিক সংখ্যা এক বেড়ে যায়",
+              d: "পারমাণবিক সংখ্যা দুই কমে যায়",
+            },
+            correct: "c",
+            explanation:
+              "<p>যখন একটি নিউক্লিয়াস থেকে একটি বিটা কণা (ইলেকট্রন) নির্গত হয়, তখন একটি নিউট্রন একটি প্রোটনে রূপান্তরিত হয়। এর ফলে ভর সংখ্যা অপরিবর্তিত থাকে, কিন্তু <b>পারমাণবিক সংখ্যা এক একক বেড়ে যায়</b>।</p>",
+          },
+          {
+            id: 12,
+            question:
+              "₈₃Bi²¹⁰ তেজস্ক্রিয় বিকিরণের ফলে ₈₄Po²¹⁰ মৌলটি তৈরি হয়। এখানে বিকিরণের ধরন হলো —",
+            options: {
+              a: "β-decay",
+              b: "α-decay",
+              c: "α and β - decay",
+              d: "γ-decay",
+            },
+            correct: "a",
+            explanation:
+              "<p>বিক্রিয়ায় দেখা যাচ্ছে, ভর সংখ্যা (210) অপরিবর্তিত আছে, কিন্তু পারমাণবিক সংখ্যা 83 থেকে 84 হয়েছে, অর্থাৎ এক একক বেড়ে গেছে। এটি <b>বিটা-মাইনাস (β<sup>-</sup>) ক্ষয়ের</b> বৈশিষ্ট্য।</p>",
+          },
+          {
+            id: 13,
+            question:
+              "কোন ধরনের তেজস্ক্রিয়তায় নিউক্লিয়াসের ভরসংখ্যা অপরিবর্তিত থাকে?",
+            options: {
+              a: "α-ক্ষয়",
+              b: "α ও γ-ক্ষয়",
+              c: "β ও γ-ক্ষয়",
+              d: "α ও β ক্ষয়",
+            },
+            correct: "c",
+            explanation:
+              "<p><b>বিটা ক্ষয় (β-ক্ষয়)</b> এবং <b>গামা ক্ষয় (γ-ক্ষয়)</b> উভয় প্রক্রিয়ায় নিউক্লিয়াসের ভরসংখ্যা অপরিবর্তিত থাকে। বিটা ক্ষয়ে পারমাণবিক সংখ্যা পরিবর্তিত হয়, আর গামা ক্ষয়ে পারমাণবিক সংখ্যাও অপরিবর্তিত থাকে।</p>",
+          },
+          {
+            id: 14,
+            question: "তেজস্ক্রিয় ক্ষয় ধ্রুবকের মাত্রা কোনটি?",
+            options: {
+              a: "[T]",
+              b: "[T⁻¹]",
+              c: "[T²]",
+              d: "[A⁻¹]",
+            },
+            correct: "b",
+            explanation:
+              "<p>তেজস্ক্রিয় ক্ষয় সূত্র N = N₀e<sup>-λt</sup> থেকে, e<sup>-λt</sup> একটি মাত্রা-বিহীন রাশি। সুতরাং, λt এর মাত্রা এক হতে হবে। যেহেতু t এর মাত্রা [T], তাই λ এর মাত্রা অবশ্যই <b>[T<sup>-1</sup>]</b> হতে হবে।</p>",
+          },
+          {
+            id: 15,
+            question:
+              "পোলোনিয়াম ²¹⁴Po (Z = 84) এর ৪টি বিকিরণের মাধ্যমে প্রাপ্ত মৌল হচ্ছে —",
+            options: {
+              a: "²¹⁴Po (Z = 84)",
+              b: "²¹⁰Pb (Z = 82)",
+              c: "²¹⁴At (Z = 85)",
+              d: "²¹⁰Bi (Z = 83)",
+            },
+            correct: "b",
+            explanation:
+              "<p>এই প্রশ্নটি সম্ভবত একটি তেজস্ক্রিয় ক্ষয় শৃঙ্খলের অংশ নির্দেশ করছে। <sup>214</sup>Po (Z = 84) প্রাকৃতিক ক্ষয় প্রক্রিয়ায় একটি আলফা কণা নির্গত করে সরাসরি <sup>210</sup>Pb (Z = 82) তে পরিণত হয়। যদিও প্রশ্নে '৪টি বিকিরণ' উল্লেখ করা হয়েছে যা বিভ্রান্তিকর, কিন্তু অপশনগুলোর মধ্যে <sup>210</sup>Pb (Z = 82) একমাত্র সম্ভাব্য উত্তর।</p>",
+          },
+          {
+            id: 16,
+            question:
+              "একটি ²³⁸U নিউক্লিয়াস প্রথম ধাপে ²³⁴Th এবং পরবর্তী ধাপে ²³⁴Pa নিউক্লিয়াসে পরিণত হয়। এই দুই ধাপে কী কী রশ্মি নির্গত হয়?",
+            options: {
+              a: "আলফা এবং বিটা",
+              b: "বিটা এবং বিটা",
+              c: "আলফা এবং আলফা",
+              d: "বিটা এবং আলফা",
+            },
+            correct: "a",
+            explanation:
+              "<p><b>প্রথম ধাপে:</b> <sup>238</sup>U<sub>92</sub> → <sup>234</sup>Th<sub>90</sub>। এখানে ভর সংখ্যা 4 এবং পারমাণবিক সংখ্যা 2 কমেছে, যা একটি <b>আলফা (α) ক্ষয়</b>।<br><b>দ্বিতীয় ধাপে:</b> <sup>234</sup>Th<sub>90</sub> → <sup>234</sup>Pa<sub>91</sub>। এখানে ভর সংখ্যা অপরিবর্তিত এবং পারমাণবিক সংখ্যা 1 বেড়েছে, যা একটি <b>বিটা (β) ক্ষয়</b>।</p>",
+          },
+          {
+            id: 17,
+            question: "²³²X → ²³³Y + বিটা রশ্মি, Z-এর মান কত?",
+            options: {
+              a: "87",
+              b: "88",
+              c: "89",
+              d: "90",
+            },
+            correct: "d",
+            explanation:
+              "<p>প্রশ্নটিতে সম্ভবত একটি মুদ্রণ ত্রুটি রয়েছে, কারণ বিটা ক্ষয়ে ভর সংখ্যা (যেমন 232) অপরিবর্তিত থাকে। যদি প্রশ্নটি হয় <sup>232</sup>X<sub>Z</sub> → <sup>232</sup>Y + বিটা রশ্মি, এবং Y এর পারমাণবিক সংখ্যা 90 হয়, তাহলে X এর পারমাণবিক সংখ্যা Z = 89 হবে। তবে, প্রদত্ত উত্তর অনুযায়ী, Z বলতে সম্ভবত Y-এর পারমাণবিক সংখ্যা 90 বোঝানো হয়েছে।</p>",
+          },
+          {
+            id: 18,
+            question: "নিউক্লিয়াসের ভর-ত্রুটির সঠিক সমীকরণ নিচের কোনটি?",
+            options: {
+              a: "Δm = [Z mp + (A - Z) mn - M]",
+              b: "Δm = [(A - Z) mp + Z mn - M]",
+              c: "Δm = [Z mp + A mn - M]",
+              d: "Δm = [A mp + A mn - M]",
+            },
+            correct: "a",
+            explanation:
+              "<p>নিউক্লিয়াসের ভর-ত্রুটি (Mass Defect, Δm) হলো নিউক্লিয়াসের গঠনকারী কণাগুলোর মোট ভরের যোগফল থেকে নিউক্লিয়াসের প্রকৃত ভরের পার্থক্য।<br>এখানে, Z = প্রোটন সংখ্যা, m<sub>p</sub> = প্রোটনের ভর, (A - Z) = নিউট্রন সংখ্যা, m<sub>n</sub> = নিউট্রনের ভর, এবং M = নিউক্লিয়াসের প্রকৃত ভর।<br>সঠিক সমীকরণ: <b>Δm = [Z m<sub>p</sub> + (A - Z) m<sub>n</sub> - M]</b>।</p>",
+          },
+          {
+            id: 19,
+            question:
+              "কোনো তেজস্ক্রিয় মৌলের অর্ধেক পরিমাণ ক্ষয় হতে যে সময় লাগে তাকে কী বলে?",
+            options: {
+              a: "পূর্ণ জীবন",
+              b: "গড় জীবন",
+              c: "অর্ধ জীবন",
+              d: "এর কোনোটিই নয়",
+            },
+            correct: "c",
+            explanation:
+              "<p>কোনো তেজস্ক্রিয় মৌলের মোট পরমাণুর অর্ধেক পরিমাণ ক্ষয় হতে যে সময় লাগে তাকে <b>অর্ধ জীবন</b> বা তেজস্ক্রিয় অর্ধায়ু (Half-life) বলে।</p>",
+          },
+          {
+            id: 20,
+            question: "একক সময়ে একটি মৌলের ক্ষয়ের সম্ভাব্যতাকে কী বলে?",
+            options: {
+              a: "বেকেরেল",
+              b: "কুরি",
+              c: "ক্ষয় ধ্রুবক",
+              d: "এর কোনোটিই নয়",
+            },
+            correct: "c",
+            explanation:
+              "<p>একক সময়ে একটি তেজস্ক্রিয় পরমাণুর ক্ষয় হওয়ার সম্ভাব্যতাকে <b>ক্ষয় ধ্রুবক</b> (Decay Constant, λ) বলে।</p>",
+          },
+          {
+            id: 21,
+            question: "একটি বিটা কণা নির্গত হলে নিউক্লিয়াসের-",
+            options: {
+              a: "প্রোটন সংখ্যা বৃদ্ধি পায়",
+              b: "নিউট্রন সংখ্যা বৃদ্ধি পায়",
+              c: "প্রোটন সংখ্যা হ্রাস পায়",
+              d: "ভরসংখ্যা হ্রাস পায়",
+            },
+            correct: "a",
+            explanation:
+              "<p>যখন একটি নিউক্লিয়াস থেকে একটি বিটা-মাইনাস (β<sup>-</sup>) কণা (ইলেকট্রন) নির্গত হয়, তখন একটি নিউট্রন একটি প্রোটনে রূপান্তরিত হয়। এর ফলে নিউক্লিয়াসের <b>প্রোটন সংখ্যা এক একক বৃদ্ধি পায়</b>।</p>",
+          },
+          {
+            id: 22,
+            question:
+              "তেজস্ক্রিয় পদার্থ থেকে বিটা রশ্মির নিঃসরণের ক্ষেত্রে নিচের কোনটি সঠিক?",
+            options: {
+              a: "তড়িৎ চুম্বকীয় বিকিরণ",
+              b: "নিউক্লিয়াস থেকে নিঃসৃত চার্জিত কণা",
+              c: "ইলেকট্রন নিঃসরণ",
+              d: "চার্জ নিরপেক্ষ",
+            },
+            correct: "c",
+            explanation:
+              "<p>বিটা রশ্মি হলো উচ্চ গতিসম্পন্ন ইলেকট্রন বা পজিট্রনের স্রোত। বিটা-মাইনাস (β<sup>-</sup>) ক্ষয়ে নিউক্লিয়াস থেকে <b>ইলেকট্রন নিঃসরণ</b> হয়।</p>",
+          },
+          {
+            id: 23,
+            question: "আলফা-রশ্মি বিকিরণের ফলে নিউক্লিয়াসে প্রোটন সংখ্যা-",
+            options: {
+              a: "2 বৃদ্ধি পায়",
+              b: "1 বৃদ্ধি পায়",
+              c: "2 হ্রাস পায়",
+              d: "4 হ্রাস পায়",
+            },
+            correct: "c",
+            explanation:
+              "<p>যখন একটি নিউক্লিয়াস থেকে একটি আলফা কণা (হিলিয়াম নিউক্লিয়াস) নির্গত হয়, তখন মূল নিউক্লিয়াসের পারমাণবিক সংখ্যা (প্রোটন সংখ্যা) <b>2 একক হ্রাস পায়</b>।</p>",
+          },
+          {
+            id: 24,
+            question:
+              "একটি বিকিরণের ফলে পারমাণবিক সংখ্যা বা ভরসংখ্যার কোনো পরিবর্তন হলো না। এই বিকিরণে নিম্নের কোন ধরনের কণা নিঃসৃত হবে?",
+            options: {
+              a: "ফোটন",
+              b: "প্রোটন",
+              c: "নিউট্রন",
+              d: "ইলেকট্রন",
+            },
+            correct: "a",
+            explanation:
+              "<p>যখন একটি নিউক্লিয়াস উত্তেজিত অবস্থা থেকে নিম্ন শক্তিস্তরে আসে, তখন এটি অতিরিক্ত শক্তি গামা (γ) রশ্মি হিসেবে নির্গত করে। গামা রশ্মি হলো <b>ফোটন</b> কণা দ্বারা গঠিত তড়িৎচুম্বকীয় বিকিরণ। এই প্রক্রিয়ায় পারমাণবিক সংখ্যা বা ভরসংখ্যার কোনো পরিবর্তন হয় না।</p>",
+          },
+          {
+            id: 25,
+            question:
+              "কোনো তেজস্ক্রিয় নিউক্লিয়াস একটি বিটা-কণা বিকিরণ করলে ভর সংখ্যার কী পরিবর্তন হবে?",
+            options: {
+              a: "ভর সংখ্যা 1 কমবে",
+              b: "ভর সংখ্যা 1 বাড়বে",
+              c: "পরিবর্তন হবে না",
+              d: "2 কমবে",
+            },
+            correct: "c",
+            explanation:
+              "<p>বিটা ক্ষয় প্রক্রিয়ায় নিউক্লিয়াসের মোট নিউক্লিয়ন সংখ্যা (প্রোটন + নিউট্রন) অপরিবর্তিত থাকে। এর ফলে ভর সংখ্যার কোনো <b>পরিবর্তন হবে না</b>।</p>",
+          },
+          {
+            id: 26,
+            question:
+              "²³⁴U থেকে বিটা রশ্মি নির্গত হলে বিক্রিয়ার ফলে উৎপন্ন হবে-",
+            options: {
+              a: "⁴He + ²³⁰Th",
+              b: "⁴He + ²³⁸Cm",
+              c: "-¹e + ²³⁴Np",
+              d: "-¹e + ²³⁴Pa",
+            },
+            correct: "c",
+            explanation:
+              "<p>যখন ইউরেনিয়াম-২৩৪ (<sup>234</sup>U<sub>92</sub>) থেকে একটি বিটা কণা (<sup>0</sup>e<sub>-1</sub>) নির্গত হয়, তখন পারমাণবিক সংখ্যা এক একক বৃদ্ধি পায় (92 → 93)। 93 পারমাণবিক সংখ্যা বিশিষ্ট মৌলটি হলো নেপচুনিয়াম (Np)।<br><sup>234</sup>U<sub>92</sub> → <sup>0</sup>e<sub>-1</sub> + <sup>234</sup>Np<sub>93</sub>।</p>",
+          },
+          {
+            id: 27,
+            question: "²²⁶Ra থেকে আলফা রশ্মি নির্গত হলে উৎপন্ন হবে-",
+            options: {
+              a: "⁴He + ²²²Rn",
+              b: "⁴He + ²³⁰Po",
+              c: "-¹e + ²²⁶Ac",
+              d: "-¹e + ²²⁶Fr",
+            },
+            correct: "a",
+            explanation:
+              "<p>যখন রেডিয়াম-২২৬ (<sup>226</sup>Ra<sub>88</sub>) থেকে একটি আলফা কণা (<sup>4</sup>He<sub>2</sub>) নির্গত হয়, তখন ভর সংখ্যা 4 এবং পারমাণবিক সংখ্যা 2 হ্রাস পায়।<br><sup>226</sup>Ra<sub>88</sub> → <sup>4</sup>He<sub>2</sub> + <sup>222</sup>Rn<sub>86</sub>। যেখানে Rn হলো রেডন।</p>",
+          },
+          {
+            id: 28,
+            question: "এক খণ্ড ইউরেনিয়াম ভাঙ্গনের হার-",
+            options: {
+              a: "সূচকীয়ভাবে কমতে থাকবে",
+              b: "সমানুপাতিক হারে বাড়তে থাকবে",
+              c: "জ্যামিতিক হারে বাড়তে থাকবে",
+              d: "সম হারে ভাঙ্গতে থাকবে",
+            },
+            correct: "a",
+            explanation:
+              "<p>তেজস্ক্রিয় ক্ষয় একটি সূচকীয় প্রক্রিয়া। এর মানে হলো, সময়ের সাথে সাথে তেজস্ক্রিয় পরমাণুর সংখ্যা এবং তাদের ভাঙ্গনের হার <b>সূচকীয়ভাবে কমতে থাকে</b>, যা N = N₀e<sup>-λt</sup> সূত্র দ্বারা নির্দেশিত হয়।</p>",
+          },
+        ],
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                            <label class="option" data-option="${option}">
+                                            <div class="circle">${option}</div>
+                                            <span class="option-text">${question.options[option]}</span>
+                                            </label>`;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                                                     <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                                                     <div class="explanation-content">
+                                                                                                       <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                                                       ${question.explanation}
+                                                                                                     </div>
+                                                                                                   </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                                                <p class="question-label">${
+                                                                                                  index +
+                                                                                                  1
+                                                                                                }. ${
+            question.question
+          }</p>
+                                                                                                <div class="options">
+                                                                                                  ${optionsHTML}
+                                                                                                </div>
+                                                                                                ${explanationHTML}
+                                                                                              `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
